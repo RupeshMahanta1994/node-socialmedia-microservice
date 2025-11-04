@@ -90,7 +90,55 @@ export async function loginController(req, res) {
     });
   }
 }
+//Refresh Token
+export async function refreshTokenController(req, res) {
+  logger.info("Refresh token endpoint hit...");
+  const { refreshToken } = req.body;
+  if (!refreshToken) {
+    logger.warn("Refesh token Missing");
+    return res.status(400).json({
+      success: false,
+      message: "Refresh token is missing",
+    });
+  }
+  let storedToken = await RefreshTokenModel.findOne({ token: refreshToken });
 
+  if (!storedToken) {
+    logger.warn("Invalid refresh token provided");
+    return res.status(400).json({
+      success: false,
+      message: "Invalid refresh token provided",
+    });
+  }
+  if (!storedToken || storedToken.expiresAt < new Date()) {
+    logger.warn("Invalid or expired refresh token provided");
+    return res.status(400).json({
+      success: false,
+      message: "Invalid or expired refresh token provided",
+    });
+  }
+  const user = await UserModel.findById(storedToken.user);
+  if (!user) {
+    logger.warn("User not found");
+    return res.status(400).json({
+      success: false,
+      message: "User not found",
+    });
+  }
+  const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
+    await generateToken(user);
+  //delete old refresh token
+  await RefreshTokenModel.deleteOne({ _id: storedToken._id });
+  res.status(200).json({
+    success: true,
+    message: "Token generated",
+    token: {
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+    },
+  });
+}
+//logout
 export async function logoutController(req, res) {
   logger.info("Logout endpoint hit...");
   try {
