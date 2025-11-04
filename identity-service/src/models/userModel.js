@@ -39,7 +39,7 @@ userSchema.pre("save", async function (next) {
     }
   }
 });
-userSchema.method.comparePassword = async (userPassword) => {
+userSchema.methods.comparePassword = async function (userPassword) {
   try {
     return await bcrypt.compare(userPassword, this.password);
   } catch (error) {
@@ -47,4 +47,5 @@ userSchema.method.comparePassword = async (userPassword) => {
   }
 };
 userSchema.index({ username: "text" });
-export default mongoose.model("User", userSchema);
+const UserModel = mongoose.model("User", userSchema);
+export default UserModel;
